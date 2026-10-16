@@ -51,6 +51,32 @@ header .brand{min-width:0}header .brand h1{overflow-wrap:anywhere}
  thead{display:table-header-group} tr{break-inside:avoid;page-break-inside:avoid}
  .printSheet h2{margin:0 0 4px;font-size:16px}.printSheet .sheetSub{margin-bottom:7px}
 }
+
+/* Interactive letter-tile spelling game (iPad friendly) */
+.spellGame{margin:16px 0 4px;background:#fbfaff;border:1.5px solid #e1dafa;border-radius:20px;padding:15px 12px}
+.spellGame .spellTitle{text-align:center;font-weight:850;color:#5143a3;font-size:14px;margin-bottom:12px}
+.spellSlots{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:5px 4px;min-height:58px;margin:11px 0 17px;padding:6px 1px}
+.spellSlot{width:35px;height:46px;border:2px solid #b7a9e9;border-radius:9px 9px 6px 6px;border-bottom:4px solid #8272da;background:#fff;display:inline-flex;justify-content:center;align-items:center;color:#38347b;font-size:22px;font-weight:950;transition:background .12s}
+.spellSlot.filled{background:#e8f7ff;border-color:#6e9ed0;border-bottom-color:#4d7bac;animation:tilePop .13s ease-out}
+.spellSlot.wrong{background:#fff0ee;border-color:#d9898b;border-bottom-color:#d46a70}
+.spellSlot.right{background:#e0f8ed;border-color:#43b78a;border-bottom-color:#26916d}
+.spellSpace{width:15px;height:30px;display:inline-flex;flex:0 0 15px}
+.spellMark{font-size:22px;min-width:10px;font-weight:900;color:#6f7193;text-align:center}
+.spellBank{display:flex;flex-wrap:wrap;justify-content:center;gap:9px 7px;margin:12px auto 14px;max-width:690px}
+.spellTile{width:48px;height:52px;border:2px solid #a4a3e4;border-bottom:5px solid #6556be;background:#fff;color:#3e348e;border-radius:13px;box-shadow:0 2px 4px #5145a617;font-size:24px;font-weight:950;touch-action:manipulation;user-select:none}
+.spellTile:not(:disabled):active{transform:translateY(3px);border-bottom-width:2px}
+.spellTile.used{opacity:.27;background:#e4e3f0;border-color:#cbd0dd;box-shadow:none}
+.spellTile:disabled{cursor:default}
+.spellActions{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:13px 0}
+.spellActions button{flex:1 1 120px;max-width:240px}
+.spellHint{background:#fff4d6;padding:12px;border-radius:12px;color:#72581c;font-size:13px;line-height:1.6;margin-top:10px}
+.spellVariant{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:10px}
+.spellVariant button{background:white;border:1px solid #bdb4e8;border-radius:11px;padding:8px 14px;color:#6554ba;font-weight:800}
+.spellVariant button.active{background:#6f5fe0;color:white;border-color:#6f5fe0}
+.spellProgress{text-align:center;color:#777492;font-size:12px;margin-top:5px}
+@keyframes tilePop{0%{transform:scale(.75)}100%{transform:scale(1)}}
+@media(max-width:520px){.spellTile{width:42px;height:49px;font-size:22px}.spellSlot{width:29px;height:40px;font-size:19px}.spellSpace{width:12px;flex-basis:12px}.spellSlots{gap:5px 3px}.spellGame{padding:13px 8px}}
+@media(max-width:360px){.spellTile{width:38px;height:46px;font-size:21px}.spellSlot{width:26px;height:37px;font-size:18px}.spellBank{gap:7px 5px}}
 </style>
 </head>
 <body>
@@ -103,7 +129,7 @@ function normalizedState(raw){
     const order=a.order;
     const validOrder=Array.isArray(order)&&order.length===max&&new Set(order).size===max&&order.every(n=>Number.isInteger(n)&&n>=0&&n<40&&(a.level===5||Math.floor(n/8)===a.level));
     if(validOrder&&Number.isInteger(a.pos)&&a.pos>=0&&a.pos<max){
-      s.active={episodeId:a.episodeId,level:a.level,mode:a.mode,order:[...order],pos:a.pos,correct:safeInt(a.correct,max),streak:safeInt(a.streak,max),bestStreak:safeInt(a.bestStreak,max),missed:Array.isArray(a.missed)?a.missed.filter(i=>Number.isInteger(i)&&i>=0&&i<40):[],answered:(a.answered&&typeof a.answered==='object'&&typeof a.answered.ok==='boolean')?a.answered:null,direction:a.direction==='th'?'th':'en'};
+      s.active={episodeId:a.episodeId,level:a.level,mode:a.mode,order:[...order],pos:a.pos,correct:safeInt(a.correct,max),streak:safeInt(a.streak,max),bestStreak:safeInt(a.bestStreak,max),missed:Array.isArray(a.missed)?a.missed.filter(i=>Number.isInteger(i)&&i>=0&&i<40):[],answered:(a.answered&&typeof a.answered==='object'&&typeof a.answered.ok==='boolean')?a.answered:null,direction:a.direction==='th'?'th':'en',spellPicks:Array.isArray(a.spellPicks)?a.spellPicks.filter(i=>Number.isInteger(i)&&i>=0&&i<120).slice(0,60):[],spellVariant:safeInt(a.spellVariant,3),spellHint:a.spellHint===true};
     }
   }
   const exam=raw?.exams;
@@ -118,7 +144,7 @@ function normalizedState(raw){
     const o=ar.order;
     const valid=Array.isArray(o)&&o.length===ar.total&&new Set(o).size===ar.total&&o.every(key=>typeof key==='string'&&/^\d+:\d+$/.test(key)&&(()=>{const [ep,id]=key.split(':').map(Number);return !!validEpisode(ep)&&id>=0&&id<40})());
     if(valid&&Number.isInteger(ar.pos)&&ar.pos>=0&&ar.pos<ar.total){
-      s.activeExam={mode:ar.mode,total:ar.total,order:[...o],pos:ar.pos,correct:safeInt(ar.correct,ar.total),streak:safeInt(ar.streak,ar.total),bestStreak:safeInt(ar.bestStreak,ar.total),missed:Array.isArray(ar.missed)?ar.missed.filter(k=>o.includes(k)):[],answered:(ar.answered&&typeof ar.answered.ok==='boolean')?ar.answered:null,direction:ar.direction==='th'?'th':'en',options:(Array.isArray(ar.options)&&ar.options.length===4&&ar.options.every(k=>typeof k==='string'))?ar.options:null,optionsPos:Number.isInteger(ar.optionsPos)?ar.optionsPos:-1};
+      s.activeExam={mode:ar.mode,total:ar.total,order:[...o],pos:ar.pos,correct:safeInt(ar.correct,ar.total),streak:safeInt(ar.streak,ar.total),bestStreak:safeInt(ar.bestStreak,ar.total),missed:Array.isArray(ar.missed)?ar.missed.filter(k=>o.includes(k)):[],answered:(ar.answered&&typeof ar.answered.ok==='boolean')?ar.answered:null,direction:ar.direction==='th'?'th':'en',options:(Array.isArray(ar.options)&&ar.options.length===4&&ar.options.every(k=>typeof k==='string'))?ar.options:null,optionsPos:Number.isInteger(ar.optionsPos)?ar.optionsPos:-1,spellPicks:Array.isArray(ar.spellPicks)?ar.spellPicks.filter(i=>Number.isInteger(i)&&i>=0&&i<120).slice(0,60):[],spellVariant:safeInt(ar.spellVariant,3),spellHint:ar.spellHint===true};
     }
   }
   return s;
@@ -232,7 +258,7 @@ function renderCards(){
 }
 function startGame(m){
  mode=m;view='game';const list=levelWords(level);
- run={episodeId,level,mode:m,order:shuffle(list.map(w=>w.id)),pos:0,correct:0,streak:0,bestStreak:0,missed:[],answered:null,direction:'en'};
+ run={episodeId,level,mode:m,order:shuffle(list.map(w=>w.id)),pos:0,correct:0,streak:0,bestStreak:0,missed:[],answered:null,direction:'en',spellPicks:[],spellVariant:0,spellHint:false};
  state.active=run;save();renderGame();
 }
 const current=()=>words()[run.order[run.pos]];
@@ -242,6 +268,82 @@ function quizOptions(){
  let a=[w,...picks],rotate=(run.pos*3+w.id)%4;return [...a.slice(rotate),...a.slice(0,rotate)];
 }
 function correctSpelling(text,w){return [w.en,...(w.alt||[])].some(a=>clean(a)===clean(text))}
+
+// 1. Use one shuffled, reproducible letter bank per word (including a few distractors).
+// 2. Show a blank for every letter, preserving spaces and hyphens.
+// 3. Save picks while learning; no keyboard or server required.
+function spellingChoices(w){return [w.en,...(w.alt||[])].filter((x,i,a)=>a.indexOf(x)===i)}
+function spellingText(w,session){return spellingChoices(w)[Math.min(Math.max(0,session.spellVariant||0),spellingChoices(w).length-1)]}
+function spellingPlain(text){return String(text).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()}
+function spellingLetters(text){return spellingPlain(text).replace(/[^a-z]/g,'')}
+function spellingBank(w,session){
+ const target=spellingLetters(spellingText(w,session));
+ const chars=[...target];
+ const fake='abcdefghijklmnopqrstuvwxyz';
+ let seed=2166136261;
+ const key=w.en+':'+String(session.pos)+':'+String(session.spellVariant||0);
+ for(const c of key){seed=Math.imul(seed^c.charCodeAt(0),16777619)>>>0}
+ const rand=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296};
+ const extras=target.length<=4?2:target.length<=12?3:2;
+ for(let i=0;i<extras;i++){
+   let ch=fake[Math.floor(rand()*fake.length)];
+   while(ch===target[Math.floor(rand()*target.length)])ch=fake[Math.floor(rand()*fake.length)];
+   chars.push(ch);
+ }
+ for(let i=chars.length-1;i>0;i--){const j=Math.floor(rand()*(i+1));[chars[i],chars[j]]=[chars[j],chars[i]]}
+ return chars;
+}
+function spellingUsed(session,bank,target){
+ const used=[];
+ for(const n of (session.spellPicks||[])){
+   if(Number.isInteger(n)&&n>=0&&n<bank.length&&!used.includes(n)&&used.length<target.length)used.push(n);
+ }
+ return used;
+}
+function spellBoardHTML(w,session){return `<div class="spellGame" id="spellBoard">${spellBoardInner(w,session)}</div>`}
+function spellBoardInner(w,session){
+ const variants=spellingChoices(w),target=spellingText(w,session),normal=spellingPlain(target),letters=spellingLetters(target);
+ const bank=spellingBank(w,session),used=spellingUsed(session,bank,letters),done=session.answered!==null;
+ const ok=done&&session.answered.ok;
+ let charIndex=0;
+ const slots=[...normal].map(ch=>{
+   if(ch===' ')return '<span class="spellSpace" aria-label="เว้นวรรค"></span>';
+   if(!/[a-z]/.test(ch))return `<span class="spellMark">${escapeHTML(ch)}</span>`;
+   const k=charIndex++,selected=used[k]!==undefined?bank[used[k]]:'';
+   return `<span class="spellSlot ${selected?'filled':''} ${done?(ok?'right':'wrong'):''}" aria-label="ตัวที่ ${k+1} ${selected||'ยังไม่เลือก'}">${escapeHTML(selected)}</span>`;
+ }).join('');
+ const buttons=bank.map((ch,i)=>`<button type="button" class="spellTile ${used.includes(i)?'used':''}" data-letter="${i}" ${done||used.includes(i)||used.length>=letters.length?'disabled':''} aria-label="เลือกตัวอักษร ${ch.toUpperCase()}">${ch.toUpperCase()}</button>`).join('');
+ return `<div class="spellTitle">🧩 แตะตัวอักษรด้านล่างเพื่อเติมช่องว่าง</div>
+ ${variants.length>1?`<div class="spellVariant">${variants.map((v,i)=>`<button type="button" data-spellvariant="${i}" class="${(session.spellVariant||0)===i?'active':''}" ${done?'disabled':''}>คำตอบแบบที่ ${i+1} (${spellingLetters(v).length} ตัว)</button>`).join('')}</div>`:''}
+ <div class="spellSlots" role="group" aria-label="ช่องคำตอบ">${slots}</div>
+ <div class="spellProgress">เลือกแล้ว ${used.length} / ${letters.length} ตัวอักษร ${done?'• ตรวจแล้ว':''}</div>
+ <div class="spellBank" role="group" aria-label="ตัวอักษรสำหรับเลือก">${buttons}</div>
+ ${!done?`<div class="spellActions"><button type="button" class="btn sm secondary" id="spellUndo" ${used.length?'':'disabled'}>↶ ลบตัวล่าสุด</button><button type="button" class="btn sm secondary" id="spellClear" ${used.length?'':'disabled'}>🧹 เริ่มคำนี้ใหม่</button><button type="button" class="btn sm secondary" id="spellHintToggle">💡 คำใบ้</button></div>
+ ${session.spellHint?`<div class="spellHint">💡 ขึ้นต้นด้วย <b>${escapeHTML(target[0].toUpperCase())}</b> • ${escapeHTML(w.hint)}</div>`:''}
+ <button type="button" class="btn" style="width:100%" id="spellSubmit" ${used.length===letters.length?'':'disabled'}>✅ ตรวจคำตอบ</button>`:''}`;
+}
+function bindSpellBoard(w,session,store,submit){
+ const root=document.querySelector('#spellBoard');if(!root||session.answered!==null)return;
+ const redraw=()=>{root.innerHTML=spellBoardInner(w,session);bindSpellBoard(w,session,store,submit)};
+ root.querySelectorAll('[data-letter]').forEach(button=>button.onclick=()=>{
+   const bank=spellingBank(w,session),letters=spellingLetters(spellingText(w,session)),used=spellingUsed(session,bank,letters),i=Number(button.dataset.letter);
+   if(used.length>=letters.length||used.includes(i))return;
+   session.spellPicks=[...used,i];store();redraw();
+ });
+ root.querySelectorAll('[data-spellvariant]').forEach(button=>button.onclick=()=>{
+   session.spellVariant=Number(button.dataset.spellvariant);session.spellPicks=[];session.spellHint=false;store();redraw();
+ });
+ root.querySelector('#spellUndo').onclick=()=>{session.spellPicks=(session.spellPicks||[]).slice(0,-1);store();redraw()};
+ root.querySelector('#spellClear').onclick=()=>{session.spellPicks=[];store();redraw()};
+ root.querySelector('#spellHintToggle').onclick=()=>{session.spellHint=!session.spellHint;store();redraw()};
+ root.querySelector('#spellSubmit').onclick=()=>{
+   const bank=spellingBank(w,session),target=spellingLetters(spellingText(w,session)),used=spellingUsed(session,bank,target);
+   if(used.length!==target.length){notify('เลือกตัวอักษรให้ครบทุกช่องก่อนนะ');return}
+   const chosen=used.map(i=>bank[i]).join('');
+   submit(chosen===target,spellingText(w,session));
+ };
+}
+
 function answer(data){
  if(run.answered!==null)return;
  run.answered=data;
@@ -251,7 +353,7 @@ function answer(data){
 }
 function next(){
  if(run.answered===null){run.missed.push(current().id);run.streak=0}
- run.pos++;run.answered=null;state.active=run;save();
+ run.pos++;run.answered=null;run.spellPicks=[];run.spellVariant=0;run.spellHint=false;state.active=run;save();
  if(run.pos>=run.order.length)endGame();else renderGame();
 }
 function endGame(){
@@ -266,9 +368,8 @@ function renderGame(){
  let input=run.mode==='quiz'?`<div class="row between" style="margin-top:14px"><h3>🎯 เลือกคำตอบที่ถูกต้อง</h3><button class="control" id="swap" ${answered?'disabled':''}>🔄 ${run.direction==='en'?'อังกฤษ → ไทย':'ไทย → อังกฤษ'}</button></div>
  <div class="question"><div class="emoji">${w.em}</div><div class="word">${escapeHTML(run.direction==='en'?wordLabel(w):w.th)}</div><div class="tip">${run.direction==='en'?'แปลว่าอะไร?':'ภาษาอังกฤษเขียนว่าอะไร?'}</div></div>
  <div class="options">${opts.map((opt,i)=>`<button class="option ${answered?(opt.id===w.id?'ok':run.answered.choice===i?'bad':''):''}" data-choice="${i}" ${answered?'disabled':''}>${escapeHTML(run.direction==='en'?opt.th:wordLabel(opt))} ${answered&&opt.id===w.id?' ✅':answered&&run.answered.choice===i?' ❌':''}</button>`).join('')}</div>`:
- `<div class="question"><div class="emoji">${w.em}</div><div class="word">${escapeHTML(w.th)}</div><div class="tip">✏️ สะกดเป็นภาษาอังกฤษให้ถูกต้อง</div></div>
- <input class="inputAnswer" id="spellInput" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Type your answer..." value="${escapeHTML(run.answered?.text||'')}" ${answered?'disabled':''}/>
- ${!answered?`<div class="buttons"><button class="btn secondary flex" id="hint">💡 ขอคำใบ้</button><button class="btn flex" id="check">✅ ตรวจคำตอบ</button></div><div class="hintbox hidden" id="hintBox">ขึ้นต้นด้วย <b>${escapeHTML(w.en[0].toUpperCase())}</b> • มี ${w.en.replace(/\s/g,'').length} ตัวอักษร<br>${escapeHTML(w.hint)}</div>`:''}`;
+ `<div class="question"><div class="emoji">${w.em}</div><div class="word">${escapeHTML(w.th)}</div><div class="tip">🧩 เรียงตัวอักษรให้เป็นภาษาอังกฤษ</div></div>
+ ${spellBoardHTML(w,run)}`;
  app.innerHTML=`${crumb(true)}<section class="panel gameBox"><div class="row between"><h2>${title(level)} <small style="font-weight:500;color:#7f87a1">· ${run.mode==='quiz'?'ทายศัพท์':'สะกดคำ'}</small></h2><span class="pill">ข้อ ${run.pos+1} / ${run.order.length}</span></div>
  <div class="progress" style="margin-top:13px"><i style="width:${run.pos/run.order.length*100}%"></i></div>
  ${audioBar(w.en,w.ex)}
@@ -280,10 +381,7 @@ function renderGame(){
    app.querySelector('#swap').onclick=()=>{run.direction=run.direction==='en'?'th':'en';state.active=run;save();renderGame()};
    app.querySelectorAll('[data-choice]').forEach(btn=>btn.onclick=()=>{const i=Number(btn.dataset.choice);answer({ok:opts[i].id===w.id,choice:i})});
  }else if(!answered){
-   const input=app.querySelector('#spellInput');
-   app.querySelector('#check').onclick=()=>{if(!input.value.trim()){notify('ลองพิมพ์คำตอบก่อนนะ');input.focus();return}answer({ok:correctSpelling(input.value,w),text:input.value})};
-   app.querySelector('#hint').onclick=()=>app.querySelector('#hintBox').classList.toggle('hidden');
-   input.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();app.querySelector('#check').click()}};
+   bindSpellBoard(w,run,()=>{state.active=run;save()},(ok,text)=>answer({ok,text}));
  }
  if(answered){app.querySelector('#readExample').onclick=()=>speak(w.ex);autoRead('game-answer:'+run.episodeId+':'+run.level+':'+run.mode+':'+run.pos,'',w.ex,'back')}
 }
@@ -371,12 +469,12 @@ toolBack();const u=()=>{examMode=app.querySelector('#examMode').value;examLength
 }
 function examDeck(n){const groups=LIBRARY.map(ep=>shuffle(ep.words.map(w=>ep.id+':'+w.id))),out=[];for(let i=0;out.length<n;i++){for(const g of groups){if(i<g.length&&out.length<n)out.push(g[i])}}return shuffle(out)}
 function examWord(key){const [ep,i]=key.split(':').map(Number);return {...validEpisode(ep).words[i],episodeId:ep,id:i,key}}
-function startExam(){examRun={mode:examMode,total:examLength,order:examDeck(examLength),pos:0,correct:0,streak:0,bestStreak:0,missed:[],answered:null,direction:'en'};state.activeExam=examRun;save();renderExamQuestion()}
+function startExam(){examRun={mode:examMode,total:examLength,order:examDeck(examLength),pos:0,correct:0,streak:0,bestStreak:0,missed:[],answered:null,direction:'en',spellPicks:[],spellVariant:0,spellHint:false};state.activeExam=examRun;save();renderExamQuestion()}
 const examCurrent=()=>examWord(examRun.order[examRun.pos]);
 const examQuestionMode=()=>examRun.mode==='mixed'?(examRun.pos%2===0?'quiz':'spell'):examRun.mode;
 function examOptions(w){const others=allWords().filter(x=>x.key!==w.key&&clean(x.th)!==clean(w.th)&&clean(x.en)!==clean(w.en));const picked=[],usedMeaning=new Set([clean(w.th)]),usedWord=new Set([clean(w.en)]);const shuffled=shuffle(others);for(const v of shuffled){if(usedMeaning.has(clean(v.th))||usedWord.has(clean(v.en)))continue;picked.push(v);usedMeaning.add(clean(v.th));usedWord.add(clean(v.en));if(picked.length===3)break}return shuffle([w,...picked])}
 function examAnswer(ok,extra={}){if(examRun.answered!==null)return;examRun.answered={ok,...extra};if(ok){examRun.correct++;examRun.streak++;examRun.bestStreak=Math.max(examRun.bestStreak,examRun.streak)}else{examRun.missed.push(examRun.order[examRun.pos]);examRun.streak=0}state.activeExam=examRun;save();renderExamQuestion()}
-function examNext(){if(examRun.answered===null){examRun.missed.push(examRun.order[examRun.pos]);examRun.streak=0}examRun.pos++;examRun.answered=null;state.activeExam=examRun;save();if(examRun.pos>=examRun.total)finishExam();else renderExamQuestion()}
+function examNext(){if(examRun.answered===null){examRun.missed.push(examRun.order[examRun.pos]);examRun.streak=0}examRun.pos++;examRun.answered=null;examRun.spellPicks=[];examRun.spellVariant=0;examRun.spellHint=false;state.activeExam=examRun;save();if(examRun.pos>=examRun.total)finishExam();else renderExamQuestion()}
 function finishExam(){const key=examRun.mode+':'+examRun.total,old=examBest(examRun.mode,examRun.total);const improved=examRun.correct>old;state.exams.best[key]=Math.max(old,examRun.correct);state.exams.history.unshift({mode:examRun.mode,total:examRun.total,score:examRun.correct,at:new Date().toISOString(),bestStreak:examRun.bestStreak});state.exams.history=state.exams.history.slice(0,100);state.activeExam=null;save();renderExamFinish(improved);if(improved)confetti()}
 function renderExamQuestion(){stopSpeech();view='exam';const w=examCurrent(),qmode=examQuestionMode(),ans=examRun.answered,opts=qmode==='quiz'?examOptions(w):[],other=ans!==null;
 // Options are deterministic for a particular question and persist across reloads or answer rerenders.
@@ -387,13 +485,13 @@ const choices=qmode==='quiz'?examRun.options.map(examWord):[];
 app.innerHTML=`${toolCrumb('🏆 สอบรวมทุกตอน')}<section class="panel gameBox"><div class="row between"><div><span class="eyebrow">EXAM CHALLENGE</span><h2>${examTypes[examRun.mode]}</h2></div><span class="pill">ข้อ ${examRun.pos+1}/${examRun.total}</span></div><div class="progress" style="margin-top:13px"><i style="width:${examRun.pos/examRun.total*100}%"></i></div><div class="statRow"><div class="stat"><small>⭐ คะแนน</small><b>${examRun.correct}</b></div><div class="stat"><small>🔥 คอมโบ</small><b>${examRun.streak}</b></div><div class="stat"><small>🏆 สูงสุด</small><b>${examRun.bestStreak}</b></div></div>
 ${audioBar(w.en,w.ex)}
 ${qmode==='quiz'?`<h3 style="margin-top:16px">🎯 ทายคำศัพท์ให้ถูกต้อง</h3><div class="question"><span class="emoji">${w.em}</span><span class="word">${escapeHTML(examRun.direction==='en'?wordLabel(w):w.th)}</span><span class="tip">${examRun.direction==='en'?'ภาษาไทยหมายถึงอะไร?':'ภาษาอังกฤษคือคำไหน?'}</span></div><div class="options">${choices.map((x,i)=>`<button class="option ${other?(x.key===w.key?'ok':ans.choice===i?'bad':''):''}" data-exchoice="${i}" ${other?'disabled':''}>${escapeHTML(examRun.direction==='en'?x.th:wordLabel(x))} ${other&&x.key===w.key?'✅':other&&ans.choice===i?'❌':''}</button>`).join('')}</div>`:
-`<h3 style="margin-top:16px">✏️ เขียนศัพท์ภาษาอังกฤษ</h3><div class="question"><span class="emoji">${w.em}</span><span class="word">${escapeHTML(w.th)}</span></div><input class="inputAnswer" id="examSpell" placeholder="พิมพ์คำตอบที่นี่" autocomplete="off" autocapitalize="off" spellcheck="false" ${other?'disabled':''} value="${escapeHTML(ans?.text||'')}"/>${other?'':`<div class="buttons"><button class="btn secondary flex" id="examHint">💡 คำใบ้</button><button class="btn flex" id="examCheck">ตรวจคำตอบ ✓</button></div><div class="hintbox hidden" id="examHintText">ขึ้นต้นด้วย <b>${escapeHTML(w.en[0].toUpperCase())}</b> • ${w.en.replace(/\s/g,'').length} ตัวอักษร • ${escapeHTML(w.hint)}</div>`}`}
+`<h3 style="margin-top:16px">🧩 เรียงตัวอักษรภาษาอังกฤษ</h3><div class="question"><span class="emoji">${w.em}</span><span class="word">${escapeHTML(w.th)}</span></div>${spellBoardHTML(w,examRun)}`}
 ${other?`<div class="feedback ${ans.ok?'':'bad'}"><strong>${ans.ok?'🎉 ถูกต้อง! ได้ 1 ดาว':'💡 ลองทบทวนคำนี้อีกครั้งนะ'}</strong><div><b>${escapeHTML(wordLabel(w))}</b> = ${escapeHTML(w.th)}</div><div class="sentence"><strong>🇬🇧 ${escapeHTML(w.ex)}</strong><div class="thai">🇹🇭 ${escapeHTML(w.tx)}</div></div></div>`:''}
 <div class="footerButtons"><button id="examNext" class="btn ${other?'':'outline'}">${other?'คำถัดไป →':'ข้ามคำนี้ →'}</button></div><div class="row between" style="margin-top:12px"><span class="note">📘 ตอน ${w.episodeId} • คำ ${w.id+1}</span><button class="control" id="examExit">🏠 กลับเมนู (บันทึกค้างไว้)</button></div></section>`;
 toolBack();app.querySelector('#examNext').onclick=examNext;app.querySelector('#examExit').onclick=renderExamMenu;bindAudioBar(w.en,w.ex);
 if(!other)autoRead('exam:'+examRun.mode+':'+examRun.total+':'+examRun.pos,qmode==='spell'||examRun.direction==='en'?w.en:'','','front');else autoRead('exam-answer:'+examRun.mode+':'+examRun.total+':'+examRun.pos,'',w.ex,'back');
 if(qmode==='quiz'){app.querySelectorAll('[data-exchoice]').forEach(btn=>btn.onclick=()=>{const i=Number(btn.dataset.exchoice);examAnswer(choices[i].key===w.key,{choice:i})})}
-else if(!other){const inp=app.querySelector('#examSpell');const submit=()=>{if(!inp.value.trim()){notify('ลองพิมพ์คำตอบก่อนนะ');return}examAnswer(correctSpelling(inp.value,w),{text:inp.value})};app.querySelector('#examCheck').onclick=submit;inp.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();submit()}};app.querySelector('#examHint').onclick=()=>app.querySelector('#examHintText').classList.toggle('hidden')}
+else if(!other){bindSpellBoard(w,examRun,()=>{state.activeExam=examRun;save()},(ok,text)=>examAnswer(ok,{text}))}
 }
 function renderExamFinish(improved){stopSpeech();view='examFinish';app.innerHTML=`${toolCrumb('🏆 สรุปผลสอบ')}<section class="panel end"><div class="big">${examRun.correct===examRun.total?'🏆':'🎉'}</div><h2>ทำข้อสอบเสร็จแล้ว!</h2><div class="number">${examRun.correct} <small>/ ${examRun.total}</small></div><p>⭐ คะแนนสูงสุด ${examBest(examRun.mode,examRun.total)}/${examRun.total} • 🔥 คอมโบสูงสุด ${examRun.bestStreak}</p>${improved?'<span class="chip">🎊 ทำสถิติใหม่แล้ว!</span>':''}</section>
 ${examRun.missed.length?`<section class="panel"><h2>📚 คำที่ควรทบทวน (${examRun.missed.length})</h2><div class="mistakes examReview">${examRun.missed.map(k=>{const w=examWord(k);return `<div class="mistake"><strong>${escapeHTML(wordLabel(w))}</strong>${escapeHTML(w.th)}<div class="note">ตอน ${w.episodeId} • ${escapeHTML(w.ex)}</div></div>`}).join('')}</div></section>`:''}
